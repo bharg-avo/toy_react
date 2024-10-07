@@ -11,6 +11,12 @@ const mapDispatchToProps = (dispatch) => {
         onSubmit: (todo) => dispatch(addTodo(todo))
     }
 }
+// Toggle todo completed state
+const mapDispatchToProps = (dispatch) => {
+    return {
+        onItemClick: (id) => dispatch(toggleTodo(id))
+    }
+}
 
 // Form component for adding new todo, dispatches addTodo with a todo object
 const AddTodo = ({onSubmit}) => {
