@@ -77,6 +77,32 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
     "addDetails": "",
     "cord": ''
   }
+  let startLoop = {
+    "stepNo": '',
+    "objectName": ' ',
+    "custname": '@Generic',
+    "keywordVal": 'startLoop',
+    "inputVal": [""],
+    "outputVal": '',
+    "remarks": "",
+    "url": ' ',
+    "appType": "Web",
+    "addDetails": "",
+    "cord": ''
+  }
+  let endLoop = {
+    "stepNo": '',
+    "objectName": ' ',
+    "custname": '@Generic',
+    "keywordVal": 'endLoop',
+    "inputVal": [""],
+    "outputVal": '',
+    "remarks": "",
+    "url": ' ',
+    "appType": "Web",
+    "addDetails": "",
+    "cord": ''
+  }
   const [rawTable, setRawTable] = useState([])
   const [message, setMessage] = useState('')
   const [dele, setDele] = useState(false)
@@ -132,6 +158,11 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
   const [copiedData, setCopiedData] = useState(null)
   const [closeApp, setCloseApp] = useState(false)
   const [maxGenius, setmaximizeGenius] = useState(false)
+  const [dataManipulated, setDataManipulated] = useState(false)
+  const [dataParamUrl, setDataParamUrl] = useState(false)
+  const [custval, setCustValue] = useState(null)
+  const [DataParamPath, setDataParamPath] = useState(null)
+
 
   const [step, setStep] = useState(null)
   const popupref = useRef(null);
@@ -235,6 +266,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
   const hideDialogScreen = () => {
     setSubmitted(false);
     setScreenDialog(false);
+    setDataParamUrl(false)
   }
   useEffect(() => {
     isMounted.current = true;
@@ -289,6 +321,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
 
   }
   const pasteData = () => {
+    setDataManipulated(true)
 
     let savedData = [...rawTable]
     let _table = [...tableAfterOperation]
@@ -334,6 +367,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
 
   const saveProduct = () => {
     setSubmitted(true);
+    setDataManipulated(true);
     let savedData = [...rawTable]
     let _table = [...tableAfterOperation]
     if (insertAtStep) {
@@ -453,7 +487,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
             //           setRawTable(_table)
             showPopup(true)
             setMessage('Test step Updated successfully')
-            toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Test Step Updated', life: 3000 });
+            // toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Test Step Updated', life: 3000 });
             //     }
             //     else {
             //         _product.id = createId();
@@ -678,6 +712,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
   }
 
   const saveScreen = () => {
+    setDataManipulated(true)
     console.log(selectedScreen)
     const screenEditTable = [...tableAfterOperation]
     let objIndex = screenEditTable.findIndex(testCase => testCase.name === selectedScreen.name)
@@ -686,8 +721,46 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
     setTableAfterOperation(screenEditTable)
     setScreenDialog(false);
   }
-  const deleteProduct = () => {
+  const saveDataParam = () => {
+    const table = tableAfterOperation
+    const UiDataParam = table.map(screenData => {
+      screenData.testcases.forEach((testcase, idx) => {
+        if (testcase.keywordVal === 'setText') {
+          let variables = `${testcase.custname}`
+          let originalVal = testcase.inputVal[0]
+          testcase.inputVal[0] = `|${testcase.custname}|`
 
+
+
+
+        }
+
+      })
+      return screenData
+    })
+    console.log(UiDataParam)
+    // setTableAfterOperation(table)
+    console.log(singleData)
+    const originalData = tableAfterOperation
+    const firstSteps = tableAfterOperation[0].testcases
+    const lastStep = originalData[originalData.length - 1].testcases
+    const newDataParamTableStart = [singleData, startLoop, ...firstSteps]
+    const newDataParamTableEnd = [...lastStep, endLoop]
+    originalData[0].testcases = newDataParamTableStart
+    if (originalData.length === 1) {
+      originalData[0].testcases = [...newDataParamTableStart, endLoop]
+      originalData[0].testcases.forEach((testcase, idx) => testcase.stepNo = idx + 1)
+    } else {
+      originalData[originalData.length - 1].testcases = newDataParamTableEnd;
+      originalData[originalData.length - 1].testcases.forEach((testcase, idx) => testcase.stepNo = idx + 1)
+    }
+    originalData[0].testcases.forEach((testcase, idx) => testcase.stepNo = idx + 1)
+    setTableAfterOperation(originalData)
+
+    setDataParamUrl(false)
+  }
+  const deleteProduct = () => {
+    setDataManipulated(true)
     // let arr=dele?[...tableAfterOperation]:[...tableDataNew]
     let arr = [...tableAfterOperation]
     let objIndex = arr.findIndex(testCase => testCase.name === selectedScreen.name)
@@ -828,6 +901,12 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
       <Button label="Save" icon="pi pi-check" className="p-button-text" onClick={saveScreen} />
     </React.Fragment>
   );
+  const dataParamDialogFooter = (
+    <React.Fragment>
+      <Button label="Cancel" icon="pi pi-times" className="p-button-text" onClick={hideDialogScreen} />
+      <Button label="Save" icon="pi pi-check" className="p-button-text" onClick={saveDataParam} />
+    </React.Fragment>
+  );
   const onHide = (name) => {
     dialogFuncMap[`${name}`](false);
   }
@@ -930,11 +1009,22 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
     _tableSingleData[`${name}`] = val;
     setSingleData(_tableSingleData);
   }
+  const onDataParamUrl = (e, name) => {
+    const val = e.target.value;
+    let _tableSingleData = { ...singleData };
+    _tableSingleData['custname'] = '@Generic'
+    _tableSingleData['keywordVal'] = 'getParam'
+    const filepath = `${val}`.replace(/(^"|"$)/g, '');
+    _tableSingleData[`${name}`] = [`${filepath};data`]
+    setSingleData(_tableSingleData)
+    setDataParamPath(`${filepath}`)
+  }
+
   const onCustChange = (e, name) => {
     const val = e.value;
     if (editableCondition) {
       setKeywordList(getKeywordList(val, projectData.keywordData, "Web", dataobjects)["keywords"])
-      setSingleData({ ...singleData, [name]: val })
+      setSingleData({ ...singleData, [name]: val, objectName: custval.objectName, url: custval.url, tempOrderId: custval.tempOrderId })
     }
     // let _tableSingleData = { ...singleData };
     // _tableSingleData[`${name}`] = val;
@@ -992,12 +1082,73 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
   }
 
   const expandAll = () => {
+
     let _expandedRows = {};
     tableDataNew.forEach(p => _expandedRows[`${p.name}`] = true);
 
     setExpandedRows(_expandedRows);
   }
+  function flatten(arr) {
+    return arr.reduce(function (flat, toFlatten) {
+      return flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten);
+    }, []);
+  }
 
+  const exportExcel = () => {
+    let arr = []
+    let obj = {}
+    let i = 0
+    const dataparamtable = [...tableAfterOperation]
+    let tabledata = dataparamtable.map(screenData => {
+      let abc = screenData.testcases.map((testcase, idx) => {
+        if (testcase.keywordVal === 'setText') {
+          let variables = `${testcase.custname}`
+          let originalVal = testcase.inputVal[0]
+          // testcase.inputVal[0]=`|${testcase.custname}|`
+
+          obj[variables] = originalVal
+
+          i++
+        }
+
+
+      })
+
+
+
+      return abc
+
+
+    })
+
+    arr.push(obj)
+    if (i > 0) {
+      import('xlsx').then(xlsx => {
+
+        const worksheet = xlsx.utils.json_to_sheet(arr);
+        const workbook = { Sheets: { 'data': worksheet }, SheetNames: ['data'] };
+        const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' });
+        saveAsExcelFile(excelBuffer, 'Genius_dataparam');
+      });
+    }
+    else {
+      showPopup(true)
+      setMessage('No fields for Data Parametrization...')
+    }
+  }
+  const saveAsExcelFile = (buffer, fileName) => {
+    import('file-saver').then(module => {
+      if (module && module.default) {
+        let EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+        let EXCEL_EXTENSION = '.xlsx';
+        const data = new Blob([buffer], {
+          type: EXCEL_TYPE
+        });
+
+        module.default.saveAs(data, fileName + '_export_' + new Date().getTime() + EXCEL_EXTENSION);
+      }
+    }).then(() => { setDataParamUrl(true) });
+  }
   let tableDataNew = useMemo(() => {
     let expandable_data = [];
     let index_of_screen = 0;
@@ -1018,7 +1169,9 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
       if (rawTable[idx]["tempOrderId"]) {
         screen_obj["data_objects"].push(dataobjects[tempIndex]);
       }
-      screen_obj["testcases"].push({ ...rawTable[idx], stepNo: stepNumber++ })
+
+      if (rawTable[idx]["keywordVal"] === "navigateToURL") { if (idx === 0 || dataobjects[tempIndex]["navigate_type"] === "") screen_obj["testcases"].push({ ...rawTable[idx], stepNo: stepNumber++ }); }
+      else screen_obj["testcases"].push({ ...rawTable[idx], stepNo: stepNumber++ });
       totalStepNumbers += 1;
       if (rawTable[idx + 1] && rawTable[idx + 1]["keywordVal"] === "navigateToURL" && dataobjects[tempIndex + 1] && dataobjects[tempIndex + 1]["tag"] === "browser_navigate" && idx > 0) {
         expandable_data.push(screen_obj);
@@ -1045,6 +1198,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
           onContextMenuSelectionChange={e => {
             setSelectedRow(e.value);
             setSingleData(e.value)
+            setCustValue(e.value)
             setSelectedScreen({ name: data.name, starting_stepNumber: data.starting_stepNumber })
             setStep(e.value.stepNo)
           }}
@@ -1060,6 +1214,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
             setSingleData(e.value);
             setStep(e.value.stepNo)
             setSelectedScreen({ name: data.name, starting_stepNumber: data.starting_stepNumber })
+            setCustValue(e.value)
             console.log(tableDataNew)
             console.log(rawTable)
             // setSelectedScreen({ name: data.name, starting_stepNumber: data.starting_stepNumber })
@@ -1095,7 +1250,11 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
   const onRowCollapse = (event) => {
     // toast.current.show({severity: 'success', summary: 'Product Collapsed', detail: event.data.name, life: 3000});
   }
-
+  const importExcel = (e) => {
+    const file = e.files[0];
+    console.log(e)
+    console.log(file)
+  }
   let editableCondition = !edit || ["@Generic", "@Browser", "@System", "@BrowserPopUp", "@Window", "@Oebs", "@Custom", "@Object", "@Email", "@Mobile", "@Action", "@Android_Custom", "@CustomiOS", "@MobileiOS", "@Sap", "@Excel", "@Word", "Mainframe List", "WebService List"].includes(singleData.custname)
 
   return (
@@ -1155,7 +1314,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
               selectionMode="single"
               selection={selectedRow}
               onSelectionChange={e => { setSelectedRow(e.value); setSingleData(e.value); setSelectedScreen({ name: e.value.name }) }}
-              footer={` Number of Screens : ${tableDataNew.length > 0 ? tableDataNew.length : 0}`} style={{ textAlign: 'center' }}
+              footer={` Number of Screens : ${tableAfterOperation.length > 0 ? tableAfterOperation.length : 0}`} style={{ textAlign: 'center' }}
             >
 
               <Column expander headerStyle={{ justifyContent: "center", backgroundColor: ' #74737f', color: '#fff', width: '10%', minWidth: '4rem', flexGrow: '0.2', borderTopLeftRadius: '8px' }} style={{ flexGrow: '0.2', paddingLeft: '0.8rem', paddingRight: '0.8rem', justifyContent: "flex-start" }} />
@@ -1263,7 +1422,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
 
           <div className="field">
             <label htmlFor="inputVal">Captured Data</label>
-            <InputText id="inputVal" value={singleData.inputVal} onChange={(e) => {onInputChange(e, 'inputVal');}} required autoFocus className={classNames({ 'p-invalid': submitted && !singleData.custname })} />
+            <InputText id="inputVal" value={singleData.inputVal} onChange={(e) => { onInputChange(e, 'inputVal'); }} required autoFocus className={classNames({ 'p-invalid': submitted && !singleData.custname })} />
             {submitted && !singleData.inputVal && <small className="p-error">Keyword is required.</small>}
           </div>
 
@@ -1273,6 +1432,16 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
           <div className="field">
             <label htmlFor="Screen">Screen</label>
             <InputText value={singleData.name} onChange={(e) => onScreenNameChange(e, 'name')} />
+            {/* {submitted && !singleData.custname && <small className="p-error">Object Name is required.</small>} */}
+          </div>
+        </Dialog>
+        <Dialog visible={dataParamUrl} style={{ width: '450px' }} header={"Update the Test Data spread sheet as per your need."} modal className="p-fluid" footer={dataParamDialogFooter} onHide={hideDialogScreen}>
+         
+          <div className="field">
+           
+            <p style={{fontSize:'13px'}}><b>Note:</b>You can find Test Data spread sheet (Genius_TestData_{"<<"}Test Scenario {">>"} .xlsx) in downloads folder. </p>
+            <label htmlFor="Screen">Excel Path: </label>
+            <InputText value={DataParamPath} onChange={(e) => onDataParamUrl(e, 'inputVal')} placeholder="Provide Test Data spread sheet path."/>
             {/* {submitted && !singleData.custname && <small className="p-error">Object Name is required.</small>} */}
           </div>
         </Dialog>
@@ -1292,12 +1461,21 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
           <span><FaEraser size={30} /></span>
           <span>All</span>
         </div>
-        <div className="bottombartooltips" data-pr-tooltip="Run test steps " ref={playRef} data-pr-position="top" style={(saved && tableAfterOperation.length !== 0) ? { border: 'none' } : { border: 'none', opacity: '0.5', pointerEvents: 'none' }} onClick={() => {
-          if (tableAfterOperation.length !== 0) {
+        <div className="bottombartooltips" data-pr-tooltip="Run test steps " ref={playRef} data-pr-position="top" style={(saved && tableAfterOperation.length !== 0) ? { border: 'none' } : { border: 'none', opacity: '0.5' }} onClick={() => {
+          console.log(tableAfterOperation)
+          if (tableAfterOperation.length !== 0 && saved) {
             port.postMessage({ "action": "startDebugging", "data": { "screens": tableAfterOperation } });
             showPopup(true); setMessage('Started running test steps'); popupref.current.style.visibility = "visible"
           }
         }}><img src={vector} /></div>  {/** execute the steps */}
+
+        <div className="bottombartooltips" data-pr-tooltip="Save Data " style={dataManipulated ? { border: 'none', color: '#62348e' } : { border: 'none', opacity: '0.5' }} data-pr-position="top" onClick={() => {
+          if (dataManipulated) { setMessage("Data Saved Successfully"); showPopup(true); port.postMessage({ data: { "module": projectData.module, "project": projectData.project, "scenario": projectData.scenario, "appType": projectData.appType, "screens": tableAfterOperation } }); setDataManipulated(false) }
+        }}>
+          <span><i className="pi pi-save" style={{ 'fontSize': '1.7rem' }}></i>
+          </span>
+
+        </div>
         <div className="bottombartooltips" data-pr-tooltip="Show Mindmap " data-pr-position="top"><img src={mindmap} onClick={() => {
           if (saved) {
             port.postMessage("getMindmap");
@@ -1309,7 +1487,7 @@ const DataTableEditDemo = ({ saved, pause, port, setBlockedDocument, setScreenNa
           setBlockedDocument(true);
           port.postMessage({ data: { "module": projectData.module, "project": projectData.project, "scenario": projectData.scenario, "appType": projectData.appType, "screens": tableAfterOperation } })
         }} /></div> {/** view the mindmap */}
-        <div ><img src={view} /></div>
+        <div className="bottombartooltips" data-pr-tooltip="Data Parameterization " data-pr-position="top" style={!dataParamUrl ? { border: 'none', color: '#62348e' } : { border: 'none', opacity: '0.5' }} onClick={() => { if (!dataParamUrl) { exportExcel() }; setDataParamPath("") }}><img src={view} /></div>
         <div className="bottombartooltips" data-pr-tooltip={!maxGenius ? "Maximize " : "Minimize"} data-pr-position="top" style={{ border: 'none' }} onClick={maximizeGenius}><CgMaximize size={30} /></div> {/** maximize genius window */}
         <div className="bottombartooltips" data-pr-tooltip="Close Genius App " data-pr-position="top" style={{ border: 'none' }} onClick={() => { if (tableData.length > 0) { setCloseGeniusWindow(true); } else { window.chrome.runtime.sendMessage({ action: 'CLOSE' }); } }}><GrClose size={25} /></div>{/** close genius window */}
       </div>
